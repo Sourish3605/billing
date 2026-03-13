@@ -5,6 +5,7 @@
  * GST Billing & Inventory Management API
  * OpenAPI spec version: 0.1.0
  */
+import type { ProductCategory } from "./productCategory";
 
 export interface Product {
   id: number;
@@ -13,5 +14,6 @@ export interface Product {
   unitPrice: number;
   quantity: number;
   minStockLevel: number;
+  category: ProductCategory;
   createdAt?: string;
 }

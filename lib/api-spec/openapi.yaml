@@ -441,9 +441,12 @@ components:
           type: integer
         minStockLevel:
           type: integer
+        category:
+          type: string
+          enum: [Shoes, Socks, Bags]
         createdAt:
           type: string
-      required: [id, name, hsnCode, unitPrice, quantity, minStockLevel]
+      required: [id, name, hsnCode, unitPrice, quantity, minStockLevel, category]
 
     ProductInput:
       type: object
@@ -458,7 +461,10 @@ components:
           type: integer
         minStockLevel:
           type: integer
-      required: [name, hsnCode, unitPrice, quantity, minStockLevel]
+        category:
+          type: string
+          enum: [Shoes, Socks, Bags]
+      required: [name, hsnCode, unitPrice, quantity, minStockLevel, category]
 
     Customer:
       type: object
@@ -515,6 +521,9 @@ components:
           type: number
         sgstAmount:
           type: number
+        category:
+          type: string
+          enum: [Shoes, Socks, Bags]
       required: [description, hsnCode, unitPrice, quantity, rate, amount, cgstPercent, cgstAmount, sgstPercent, sgstAmount]
 
     Invoice:

@@ -5,6 +5,7 @@
  * GST Billing & Inventory Management API
  * OpenAPI spec version: 0.1.0
  */
+import type { InvoiceItemCategory } from "./invoiceItemCategory";
 
 export interface InvoiceItem {
   productId?: number;
@@ -18,4 +19,5 @@ export interface InvoiceItem {
   cgstAmount: number;
   sgstPercent: number;
   sgstAmount: number;
+  category?: InvoiceItemCategory;
 }

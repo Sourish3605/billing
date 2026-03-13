@@ -53,6 +53,7 @@ export const ListProductsResponseItem = zod.object({
   unitPrice: zod.number(),
   quantity: zod.number(),
   minStockLevel: zod.number(),
+  category: zod.enum(["Shoes", "Socks", "Bags"]),
   createdAt: zod.string().optional(),
 });
 export const ListProductsResponse = zod.array(ListProductsResponseItem);
@@ -66,6 +67,7 @@ export const CreateProductBody = zod.object({
   unitPrice: zod.number(),
   quantity: zod.number(),
   minStockLevel: zod.number(),
+  category: zod.enum(["Shoes", "Socks", "Bags"]),
 });
 
 /**
@@ -82,6 +84,7 @@ export const GetProductResponse = zod.object({
   unitPrice: zod.number(),
   quantity: zod.number(),
   minStockLevel: zod.number(),
+  category: zod.enum(["Shoes", "Socks", "Bags"]),
   createdAt: zod.string().optional(),
 });
 
@@ -98,6 +101,7 @@ export const UpdateProductBody = zod.object({
   unitPrice: zod.number(),
   quantity: zod.number(),
   minStockLevel: zod.number(),
+  category: zod.enum(["Shoes", "Socks", "Bags"]),
 });
 
 export const UpdateProductResponse = zod.object({
@@ -107,6 +111,7 @@ export const UpdateProductResponse = zod.object({
   unitPrice: zod.number(),
   quantity: zod.number(),
   minStockLevel: zod.number(),
+  category: zod.enum(["Shoes", "Socks", "Bags"]),
   createdAt: zod.string().optional(),
 });
 
@@ -204,6 +209,7 @@ export const ListInvoicesResponseItem = zod.object({
       cgstAmount: zod.number(),
       sgstPercent: zod.number(),
       sgstAmount: zod.number(),
+      category: zod.enum(["Shoes", "Socks", "Bags"]).optional(),
     }),
   ),
   totalQuantity: zod.number(),
@@ -241,6 +247,7 @@ export const CreateInvoiceBody = zod.object({
       cgstAmount: zod.number(),
       sgstPercent: zod.number(),
       sgstAmount: zod.number(),
+      category: zod.enum(["Shoes", "Socks", "Bags"]).optional(),
     }),
   ),
   totalQuantity: zod.number(),
@@ -282,6 +289,7 @@ export const GetInvoiceResponse = zod.object({
       cgstAmount: zod.number(),
       sgstPercent: zod.number(),
       sgstAmount: zod.number(),
+      category: zod.enum(["Shoes", "Socks", "Bags"]).optional(),
     }),
   ),
   totalQuantity: zod.number(),
@@ -322,6 +330,7 @@ export const UpdateInvoiceBody = zod.object({
       cgstAmount: zod.number(),
       sgstPercent: zod.number(),
       sgstAmount: zod.number(),
+      category: zod.enum(["Shoes", "Socks", "Bags"]).optional(),
     }),
   ),
   totalQuantity: zod.number(),
@@ -356,6 +365,7 @@ export const UpdateInvoiceResponse = zod.object({
       cgstAmount: zod.number(),
       sgstPercent: zod.number(),
       sgstAmount: zod.number(),
+      category: zod.enum(["Shoes", "Socks", "Bags"]).optional(),
     }),
   ),
   totalQuantity: zod.number(),
@@ -424,6 +434,7 @@ export const GetDashboardResponse = zod.object({
       unitPrice: zod.number(),
       quantity: zod.number(),
       minStockLevel: zod.number(),
+      category: zod.enum(["Shoes", "Socks", "Bags"]),
       createdAt: zod.string().optional(),
     }),
   ),

@@ -9,6 +9,7 @@ export const productsTable = pgTable("products", {
   unitPrice: numeric("unit_price", { precision: 12, scale: 2 }).notNull(),
   quantity: integer("quantity").notNull().default(0),
   minStockLevel: integer("min_stock_level").notNull().default(0),
+  category: text("category").notNull().default("Shoes"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

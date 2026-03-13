@@ -33,6 +33,15 @@ export interface AuthUser {
   authenticated: boolean;
 }
 
+export type ProductCategory =
+  (typeof ProductCategory)[keyof typeof ProductCategory];
+
+export const ProductCategory = {
+  Shoes: "Shoes",
+  Socks: "Socks",
+  Bags: "Bags",
+} as const;
+
 export interface Product {
   id: number;
   name: string;
@@ -40,8 +49,18 @@ export interface Product {
   unitPrice: number;
   quantity: number;
   minStockLevel: number;
+  category: ProductCategory;
   createdAt?: string;
 }
+
+export type ProductInputCategory =
+  (typeof ProductInputCategory)[keyof typeof ProductInputCategory];
+
+export const ProductInputCategory = {
+  Shoes: "Shoes",
+  Socks: "Socks",
+  Bags: "Bags",
+} as const;
 
 export interface ProductInput {
   name: string;
@@ -49,6 +68,7 @@ export interface ProductInput {
   unitPrice: number;
   quantity: number;
   minStockLevel: number;
+  category: ProductInputCategory;
 }
 
 export interface Customer {
@@ -67,6 +87,15 @@ export interface CustomerInput {
   gstin?: string;
 }
 
+export type InvoiceItemCategory =
+  (typeof InvoiceItemCategory)[keyof typeof InvoiceItemCategory];
+
+export const InvoiceItemCategory = {
+  Shoes: "Shoes",
+  Socks: "Socks",
+  Bags: "Bags",
+} as const;
+
 export interface InvoiceItem {
   productId?: number;
   description: string;
@@ -79,6 +108,7 @@ export interface InvoiceItem {
   cgstAmount: number;
   sgstPercent: number;
   sgstAmount: number;
+  category?: InvoiceItemCategory;
 }
 
 export type InvoiceRoundingOption =
