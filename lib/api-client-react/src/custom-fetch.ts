@@ -6,6 +6,9 @@ export type ErrorType<T = unknown> = ApiError<T>;
 
 export type BodyType<T> = T;
 
+const runtimeEnv = typeof import.meta !== "undefined" ? (import.meta as { env?: Record<string, string | undefined> }).env : undefined;
+const apiBaseUrl = runtimeEnv?.VITE_API_BASE_URL?.replace(/\/$/, "") || "";
+
 const NO_BODY_STATUS = new Set([204, 205, 304]);
 const DEFAULT_JSON_ACCEPT = "application/json, application/problem+json";
 
@@ -29,6 +32,13 @@ function resolveUrl(input: RequestInfo | URL): string {
   if (typeof input === "string") return input;
   if (isUrl(input)) return input.toString();
   return input.url;
+}
+
+function withApiBaseUrl(url: string): string {
+  if (!apiBaseUrl) return url;
+  if (/^https?:\/\//i.test(url)) return url;
+  if (!url.startsWith("/")) return url;
+  return `${apiBaseUrl}${url}`;
 }
 
 function mergeHeaders(...sources: Array<HeadersInit | undefined>): Headers {
@@ -297,9 +307,15 @@ export async function customFetch<T = unknown>(
     headers.set("accept", DEFAULT_JSON_ACCEPT);
   }
 
-  const requestInfo = { method, url: resolveUrl(input) };
+  const requestUrl = withApiBaseUrl(resolveUrl(input));
+  const requestInfo = { method, url: requestUrl };
 
-  const response = await fetch(input, { ...init, method, headers });
+  const response = await fetch(requestUrl, {
+    ...init,
+    method,
+    headers,
+    credentials: init.credentials ?? "include",
+  });
 
   if (!response.ok) {
     const errorData = await parseErrorBody(response, method);

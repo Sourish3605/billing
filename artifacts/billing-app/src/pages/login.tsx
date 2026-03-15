@@ -5,8 +5,8 @@ import { Loader2, Lock, User } from "lucide-react";
 
 export default function Login() {
   const { login, isAuthenticated, isLoggingIn } = useAuth();
-  const [username, setUsername] = useState("Srigaytri");
-  const [password, setPassword] = useState("Srigaytri@123");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
 
   if (isAuthenticated) {
     return <Redirect to="/dashboard" />;
@@ -14,7 +14,12 @@ export default function Login() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await login({ username, password });
+    try {
+      await login({ username, password });
+    } catch {
+      // Toast messaging is handled in the auth hook; prevent overlay from
+      // surfacing expected API failures to end users.
+    }
   };
 
   return (
@@ -26,7 +31,7 @@ export default function Login() {
           alt="Background" 
           className="w-full h-full object-cover opacity-40"
         />
-        <div className="absolute inset-0 bg-gradient-to-br from-background/90 via-background/50 to-background/80 backdrop-blur-sm" />
+        <div className="absolute inset-0 bg-linear-to-br from-background/90 via-background/50 to-background/80 backdrop-blur-sm" />
       </div>
 
       <div className="relative z-10 w-full max-w-md p-8">
@@ -40,7 +45,7 @@ export default function Login() {
             <p className="text-muted-foreground mt-2 text-center">Sign in to manage your billing and inventory.</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6" autoComplete="off">
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground ml-1">Username</label>
               <div className="relative">
@@ -51,6 +56,9 @@ export default function Login() {
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
+                  autoComplete="off"
+                  autoCapitalize="none"
+                  spellCheck={false}
                   className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-background/50 border-2 border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all duration-200"
                   placeholder="Enter username"
                   required
@@ -68,6 +76,7 @@ export default function Login() {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="new-password"
                   className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-background/50 border-2 border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all duration-200"
                   placeholder="Enter password"
                   required
@@ -78,7 +87,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={isLoggingIn}
-              className="w-full py-4 rounded-xl font-semibold text-lg bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-lg shadow-primary/30 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2"
+              className="w-full py-4 rounded-xl font-semibold text-lg bg-linear-to-r from-primary to-primary/80 text-primary-foreground shadow-lg shadow-primary/30 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2"
             >
               {isLoggingIn ? (
                 <>

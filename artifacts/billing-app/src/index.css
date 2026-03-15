@@ -167,6 +167,7 @@
   }
   
   .invoice-print-container {
+    display: block !important;
     width: 100%;
     margin: 0;
     padding: 0;

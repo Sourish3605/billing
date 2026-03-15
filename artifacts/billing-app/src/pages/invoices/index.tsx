@@ -1,11 +1,17 @@
 import { AppLayout } from "@/components/layout/AppLayout";
-import { useInvoicesData } from "@/hooks/use-invoices";
+import { useInvoicesData, useInvoiceMutations } from "@/hooks/use-invoices";
 import { formatCurrency } from "@/lib/utils";
-import { Loader2, FileText, Plus, Eye } from "lucide-react";
+import { Loader2, FileText, Plus, Eye, Trash2 } from "lucide-react";
 import { Link } from "wouter";
 
 export default function InvoicesList() {
   const { data: invoices, isLoading } = useInvoicesData();
+  const { deleteInvoice, isDeleting } = useInvoiceMutations();
+
+  const handleDelete = async (id: number, invoiceNumber: string) => {
+    if (!confirm(`Delete invoice ${invoiceNumber}? This will restore the stock and cannot be undone.`)) return;
+    await deleteInvoice(id);
+  };
 
   return (
     <AppLayout>
@@ -53,6 +59,13 @@ export default function InvoicesList() {
                       <Link href={`/invoices/${inv.id}`} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg flex items-center gap-1 text-sm font-medium">
                         <Eye className="w-4 h-4" /> View / Edit
                       </Link>
+                      <button
+                        onClick={() => handleDelete(inv.id, inv.invoiceNumber)}
+                        disabled={isDeleting}
+                        className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg flex items-center gap-1 text-sm font-medium disabled:opacity-50"
+                      >
+                        <Trash2 className="w-4 h-4" /> Delete
+                      </button>
                     </td>
                   </tr>
                 ))}

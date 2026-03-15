@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { InvoicePrintView } from "@/components/InvoicePrintView";
-import { useInvoiceMutations, useInvoiceData } from "@/hooks/use-invoices";
+import { useInvoiceMutations, useInvoiceData, useInvoicesData } from "@/hooks/use-invoices";
 import { useProductsData } from "@/hooks/use-products";
 import { useCustomersData } from "@/hooks/use-customers";
 import { useSettingsData } from "@/hooks/use-settings";
@@ -40,6 +40,21 @@ const emptyItem = (): InvoiceItem => ({
   category: "Shoes",
 });
 
+function getNextInvoiceNumber(invoices?: Array<{ invoiceNumber: string }>): string {
+  if (!invoices?.length) return "01";
+
+  const numericInvoiceNumbers = invoices
+    .map((invoice) => String(invoice.invoiceNumber || "").trim())
+    .filter((invoiceNumber) => /^\d+$/.test(invoiceNumber))
+    .map((invoiceNumber) => parseInt(invoiceNumber, 10));
+
+  const nextNumber = numericInvoiceNumbers.length > 0
+    ? Math.max(...numericInvoiceNumbers) + 1
+    : invoices.length + 1;
+
+  return String(nextNumber).padStart(2, "0");
+}
+
 export default function InvoiceForm() {
   const params = useParams();
   const id = params.id ? parseInt(params.id) : null;
@@ -47,32 +62,63 @@ export default function InvoiceForm() {
 
   const [, setLocation] = useLocation();
   const { data: invoiceToEdit, isLoading: loadingInvoice } = useInvoiceData(id);
+  const { data: invoices } = useInvoicesData();
   const { data: products } = useProductsData();
   const { data: customers } = useCustomersData();
   const { data: settings } = useSettingsData();
   const { createInvoice, updateInvoice, isCreating, isUpdating } = useInvoiceMutations();
 
+  const [invoiceNumber, setInvoiceNumber] = useState("01");
+  const [invoiceNumberTouched, setInvoiceNumberTouched] = useState(false);
   const [invoiceDate, setInvoiceDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [customerName, setCustomerName] = useState("");
   const [customerAddress, setCustomerAddress] = useState("");
   const [customerGstin, setCustomerGstin] = useState("");
   const [customerId, setCustomerId] = useState<number | undefined>(undefined);
   const [items, setItems] = useState<InvoiceItem[]>([emptyItem()]);
+  const [cgstPercent, setCgstPercent] = useState<number>(9);
+  const [sgstPercent, setSgstPercent] = useState<number>(9);
   const [roundingOption, setRoundingOption] = useState<InvoiceInputRoundingOption>("nearest");
   const [customRounding, setCustomRounding] = useState<number>(0);
 
   useEffect(() => {
     if (isEdit && invoiceToEdit) {
+      setInvoiceNumber(invoiceToEdit.invoiceNumber || "01");
+      setInvoiceNumberTouched(true);
       setInvoiceDate(invoiceToEdit.invoiceDate.split("T")[0]);
       setCustomerName(invoiceToEdit.customerName);
       setCustomerAddress(invoiceToEdit.customerAddress);
       setCustomerGstin(invoiceToEdit.customerGstin || "");
       setCustomerId(invoiceToEdit.customerId);
+
+      const firstItem = invoiceToEdit.items?.[0];
+      const derivedCgst =
+        typeof firstItem?.cgstPercent === "number"
+          ? firstItem.cgstPercent
+          : invoiceToEdit.subTotal > 0
+            ? (invoiceToEdit.totalCgst / invoiceToEdit.subTotal) * 100
+            : 0;
+      const derivedSgst =
+        typeof firstItem?.sgstPercent === "number"
+          ? firstItem.sgstPercent
+          : invoiceToEdit.subTotal > 0
+            ? (invoiceToEdit.totalSgst / invoiceToEdit.subTotal) * 100
+            : 0;
+
+      setCgstPercent(Number.isFinite(derivedCgst) ? Number(derivedCgst.toFixed(2)) : 0);
+      setSgstPercent(Number.isFinite(derivedSgst) ? Number(derivedSgst.toFixed(2)) : 0);
+
       setItems(invoiceToEdit.items);
       setRoundingOption(invoiceToEdit.roundingOption as InvoiceInputRoundingOption);
       setCustomRounding(invoiceToEdit.customRounding || 0);
     }
   }, [isEdit, invoiceToEdit]);
+
+  useEffect(() => {
+    if (!isEdit && !invoiceToEdit && !invoiceNumberTouched) {
+      setInvoiceNumber(getNextInvoiceNumber(invoices));
+    }
+  }, [isEdit, invoiceToEdit, invoices, invoiceNumberTouched]);
 
   const handleCustomerSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const cid = parseInt(e.target.value);
@@ -88,8 +134,8 @@ export default function InvoiceForm() {
   const recalcItem = (item: InvoiceItem): InvoiceItem => {
     const up = Number(item.unitPrice) || 0;
     const qty = Number(item.quantity) || 0;
-    const cgstP = Number(item.cgstPercent) || 0;
-    const sgstP = Number(item.sgstPercent) || 0;
+    const cgstP = Number(cgstPercent) || 0;
+    const sgstP = Number(sgstPercent) || 0;
     const cat = (item.category || "Shoes") as Category;
 
     if (cat === "Shoes") {
@@ -99,7 +145,9 @@ export default function InvoiceForm() {
         ...item,
         rate,
         amount,
+        cgstPercent: cgstP,
         cgstAmount: amount * (cgstP / 100),
+        sgstPercent: sgstP,
         sgstAmount: amount * (sgstP / 100),
       };
     } else {
@@ -110,19 +158,27 @@ export default function InvoiceForm() {
         ...item,
         rate,
         amount,
+        cgstPercent: cgstP,
         cgstAmount: amount * (cgstP / 100),
+        sgstPercent: sgstP,
         sgstAmount: amount * (sgstP / 100),
       };
     }
   };
 
+  useEffect(() => {
+    setItems((prev) => prev.map((item) => recalcItem(item)));
+  }, [cgstPercent, sgstPercent]);
+
   const updateRow = (index: number, field: keyof InvoiceItem, value: any) => {
     const newItems = [...items];
-    let item = { ...newItems[index], [field]: value };
+    // Always store productId as a number so the backend can match it in the DB
+    const coercedValue = field === "productId" ? (value ? parseInt(value) : undefined) : value;
+    let item = { ...newItems[index], [field]: coercedValue };
 
     // Auto-fill from product selection
-    if (field === "productId" && value) {
-      const p = products?.find(x => x.id === parseInt(value));
+    if (field === "productId" && coercedValue) {
+      const p = products?.find(x => x.id === coercedValue);
       if (p) {
         item.description = p.name;
         item.hsnCode = p.hsnCode;
@@ -149,8 +205,8 @@ export default function InvoiceForm() {
 
   const totalQuantity = items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
   const subTotal = items.reduce((sum, item) => sum + (item.amount || 0), 0);
-  const totalCgst = items.reduce((sum, item) => sum + (item.cgstAmount || 0), 0);
-  const totalSgst = items.reduce((sum, item) => sum + (item.sgstAmount || 0), 0);
+  const totalCgst = subTotal * ((Number(cgstPercent) || 0) / 100);
+  const totalSgst = subTotal * ((Number(sgstPercent) || 0) / 100);
   const grandTotal = subTotal + totalCgst + totalSgst;
 
   let finalAmount = grandTotal;
@@ -160,24 +216,29 @@ export default function InvoiceForm() {
   const amountInWords = numberToWordsIndian(finalAmount);
 
   const handleSave = async () => {
-    if (!customerName || items.length === 0) return alert("Please fill required fields");
-    const payload: InvoiceInput = {
+    if (!invoiceNumber.trim() || !customerName || items.length === 0) return alert("Please fill required fields");
+    const payload: InvoiceInput & { invoiceNumber: string } = {
+      invoiceNumber: invoiceNumber.trim(),
       invoiceDate, customerId, customerName, customerAddress, customerGstin,
       items, totalQuantity, subTotal, totalCgst, totalSgst, grandTotal,
       roundingOption, customRounding, finalAmount, amountInWords,
     };
-    if (isEdit && id) {
-      await updateInvoice(id, payload);
-    } else {
-      await createInvoice(payload);
-      setLocation("/invoices");
+    try {
+      if (isEdit && id) {
+        await updateInvoice(id, payload);
+      } else {
+        await createInvoice(payload);
+        setLocation("/invoices");
+      }
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Failed to save invoice");
     }
   };
 
   if (isEdit && loadingInvoice) return <AppLayout><div className="p-12 text-center"><Loader2 className="animate-spin mx-auto h-8 w-8" /></div></AppLayout>;
 
   const previewInvoice: any = {
-    invoiceNumber: invoiceToEdit?.invoiceNumber || "DRAFT-000",
+    invoiceNumber: invoiceNumber || invoiceToEdit?.invoiceNumber || "01",
     invoiceDate, customerName, customerAddress, customerGstin, items,
     totalQuantity, subTotal, totalCgst, totalSgst, grandTotal, finalAmount, amountInWords,
   };
@@ -205,6 +266,10 @@ export default function InvoiceForm() {
                   </select>
                 </div>
                 <div>
+                  <label className="text-sm font-medium mb-1 block">Invoice Number *</label>
+                  <input value={invoiceNumber} onChange={e => { setInvoiceNumberTouched(true); setInvoiceNumber(e.target.value); }} className="w-full p-2.5 rounded-lg border-2 border-border focus:border-primary" />
+                </div>
+                <div>
                   <label className="text-sm font-medium mb-1 block">Invoice Date</label>
                   <input type="date" value={invoiceDate} onChange={e => setInvoiceDate(e.target.value)} className="w-full p-2.5 rounded-lg border-2 border-border focus:border-primary" />
                 </div>
@@ -227,18 +292,16 @@ export default function InvoiceForm() {
             <div className="bg-card p-6 rounded-2xl shadow-sm border border-border/50 overflow-hidden">
               <h2 className="text-lg font-bold mb-4">Products / Services</h2>
               <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse min-w-[900px]">
+                <table className="w-full text-left border-collapse min-w-225">
                   <thead>
                     <tr className="bg-muted text-xs uppercase tracking-wider text-muted-foreground">
                       <th className="p-3 w-8">#</th>
-                      <th className="p-3">Product / Description</th>
+                      <th className="p-3">Product / Shoe Description</th>
                       <th className="p-3 w-20">HSN</th>
                       <th className="p-3 w-24">Unit Price</th>
-                      <th className="p-3 w-16">Qty</th>
+                      <th className="p-3 w-16">Qty (Pairs)</th>
                       <th className="p-3 w-20">Rate</th>
                       <th className="p-3 w-22">Amount</th>
-                      <th className="p-3 w-16">CGST%</th>
-                      <th className="p-3 w-16">SGST%</th>
                       <th className="p-3 w-8"></th>
                     </tr>
                   </thead>
@@ -278,15 +341,15 @@ export default function InvoiceForm() {
                             <input value={item.hsnCode} onChange={e => updateRow(index, "hsnCode", e.target.value)} className="w-full p-1.5 border rounded text-sm" />
                           </td>
                           <td className="p-3">
-                            <input type="number" value={item.unitPrice} onChange={e => updateRow(index, "unitPrice", e.target.value)} className="w-full p-1.5 border rounded text-sm" />
+                            <input type="number" value={item.unitPrice === 0 ? "" : item.unitPrice} onChange={e => updateRow(index, "unitPrice", e.target.value)} className="w-full p-1.5 border rounded text-sm" />
                           </td>
                           <td className="p-3">
-                            <input type="number" value={item.quantity} onChange={e => updateRow(index, "quantity", e.target.value)} className="w-full p-1.5 border rounded text-sm" />
+                            <input type="number" value={item.quantity === 0 ? "" : item.quantity} onChange={e => updateRow(index, "quantity", e.target.value)} className="w-full p-1.5 border rounded text-sm" />
                           </td>
                           <td className="p-3">
                             {isShoe ? (
                               <span className="w-full p-1.5 block text-sm font-mono bg-muted/40 rounded text-center">
-                                {Number(item.rate).toFixed(2)}
+                                {Number(item.rate) > 0 ? Number(item.rate).toFixed(2) : ""}
                               </span>
                             ) : (
                               <input
@@ -300,13 +363,7 @@ export default function InvoiceForm() {
                             )}
                           </td>
                           <td className="p-3 text-sm font-mono bg-muted/30 text-right pr-3">
-                            {Number(item.amount).toFixed(2)}
-                          </td>
-                          <td className="p-3">
-                            <input type="number" value={item.cgstPercent} onChange={e => updateRow(index, "cgstPercent", e.target.value)} className="w-full p-1.5 border rounded text-sm" />
-                          </td>
-                          <td className="p-3">
-                            <input type="number" value={item.sgstPercent} onChange={e => updateRow(index, "sgstPercent", e.target.value)} className="w-full p-1.5 border rounded text-sm" />
+                            {Number(item.amount) > 0 ? Number(item.amount).toFixed(2) : ""}
                           </td>
                           <td className="p-3">
                             <button onClick={() => setItems(items.filter((_, i) => i !== index))} className="p-1.5 text-rose-500 hover:bg-rose-100 rounded">
@@ -333,6 +390,7 @@ export default function InvoiceForm() {
               <p className="mt-2 text-xs text-muted-foreground">
                 <span className="font-semibold">Shoes:</span> Rate is auto-calculated (15% GST for ₹999/1099/1199, else 18%).
                 &nbsp;<span className="font-semibold">Socks/Bags:</span> Enter Rate manually.
+                &nbsp;GST is set once below and applied to all rows.
               </p>
             </div>
 
@@ -353,13 +411,41 @@ export default function InvoiceForm() {
                 </div>
 
                 <div className="pt-3 border-t border-primary/10">
+                  <label className="text-xs font-medium block mb-2 text-primary">Overall GST (Manual)</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <label className="text-xs text-muted-foreground">
+                      CGST%
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={cgstPercent}
+                        onChange={(e) => setCgstPercent(Number(e.target.value) || 0)}
+                        className="w-full mt-1 p-1.5 border rounded"
+                      />
+                    </label>
+                    <label className="text-xs text-muted-foreground">
+                      SGST%
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={sgstPercent}
+                        onChange={(e) => setSgstPercent(Number(e.target.value) || 0)}
+                        className="w-full mt-1 p-1.5 border rounded"
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-primary/10">
                   <label className="text-xs font-medium block mb-2 text-primary">Rounding</label>
                   <div className="space-y-2">
                     <label className="flex items-center gap-2 cursor-pointer text-xs"><input type="radio" name="rounding" checked={roundingOption === "decimal"} onChange={() => setRoundingOption("decimal")} /> Keep Decimal</label>
                     <label className="flex items-center gap-2 cursor-pointer text-xs"><input type="radio" name="rounding" checked={roundingOption === "nearest"} onChange={() => setRoundingOption("nearest")} /> Round to Nearest (₹{Math.round(grandTotal)})</label>
                     <label className="flex items-center gap-2 cursor-pointer text-xs">
                       <input type="radio" name="rounding" checked={roundingOption === "custom"} onChange={() => setRoundingOption("custom")} /> Custom Adjust:
-                      <input type="number" step="0.01" className="w-16 p-1 border rounded" disabled={roundingOption !== "custom"} value={customRounding} onChange={e => setCustomRounding(Number(e.target.value))} />
+                      <input type="number" step="0.01" className="w-16 p-1 border rounded" disabled={roundingOption !== "custom"} value={customRounding === 0 ? "" : customRounding} onChange={e => setCustomRounding(Number(e.target.value) || 0)} />
                     </label>
                   </div>
                 </div>

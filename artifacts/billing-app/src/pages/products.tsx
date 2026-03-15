@@ -141,7 +141,6 @@ export default function Products() {
               <div>
                 <label className="block text-sm font-medium mb-1">Category</label>
                 <select
-                  required
                   value={formData.category}
                   onChange={e => setFormData({ ...formData, category: e.target.value as Category })}
                   className="w-full px-4 py-2.5 rounded-lg border-2 border-border focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all"
@@ -151,24 +150,24 @@ export default function Products() {
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Product Name</label>
-                <input required type="text" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="w-full px-4 py-2.5 rounded-lg border-2 border-border focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all" />
+                <input type="text" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="w-full px-4 py-2.5 rounded-lg border-2 border-border focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all" />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">HSN/SAC Code</label>
-                <input required type="text" value={formData.hsnCode} onChange={e => setFormData({ ...formData, hsnCode: e.target.value })} className="w-full px-4 py-2.5 rounded-lg border-2 border-border focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all" />
+                <input type="text" value={formData.hsnCode} onChange={e => setFormData({ ...formData, hsnCode: e.target.value })} className="w-full px-4 py-2.5 rounded-lg border-2 border-border focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all" />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Unit Price (₹)</label>
-                <input required type="number" step="0.01" value={formData.unitPrice} onChange={e => setFormData({ ...formData, unitPrice: parseFloat(e.target.value) || 0 })} className="w-full px-4 py-2.5 rounded-lg border-2 border-border focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all" />
+                <input type="number" step="0.01" value={formData.unitPrice === 0 ? "" : formData.unitPrice} onChange={e => setFormData({ ...formData, unitPrice: parseFloat(e.target.value) || 0 })} className="w-full px-4 py-2.5 rounded-lg border-2 border-border focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-1">Available Qty</label>
-                  <input required type="number" value={formData.quantity} onChange={e => setFormData({ ...formData, quantity: parseInt(e.target.value) || 0 })} className="w-full px-4 py-2.5 rounded-lg border-2 border-border focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all" />
+                  <input type="number" value={formData.quantity === 0 ? "" : formData.quantity} onChange={e => setFormData({ ...formData, quantity: parseInt(e.target.value) || 0 })} className="w-full px-4 py-2.5 rounded-lg border-2 border-border focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">Min Stock Level</label>
-                  <input required type="number" value={formData.minStockLevel} onChange={e => setFormData({ ...formData, minStockLevel: parseInt(e.target.value) || 0 })} className="w-full px-4 py-2.5 rounded-lg border-2 border-border focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all" />
+                  <input type="number" value={formData.minStockLevel} onChange={e => setFormData({ ...formData, minStockLevel: parseInt(e.target.value) || 0 })} className="w-full px-4 py-2.5 rounded-lg border-2 border-border focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all" />
                 </div>
               </div>
 
