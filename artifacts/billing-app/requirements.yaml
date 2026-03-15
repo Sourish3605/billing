@@ -1,0 +1,18 @@
+packages:
+  "react-hook-form": "For robust form state management and validation"
+  "@hookform/resolvers": "For integrating Zod schemas with react-hook-form"
+  "date-fns": "For formatting dates easily"
+  "jspdf": "For PDF generation"
+  "jspdf-autotable": "For generating tables within PDFs"
+
+images:
+  - path: "artifacts/billing-app/public/images/login-bg.png"
+    description: "Abstract clean corporate background with light blue and white geometric shapes, subtle gradients, highly professional"
+    aspect_ratio: "16:9"
+  - path: "artifacts/billing-app/public/images/logo.png"
+    description: "Clean professional minimalist logo icon for a billing software, blue and navy colors, geometric shape"
+    aspect_ratio: "1:1"
+
+notes:
+  - Using generated Orval hooks from @workspace/api-client-react
+  - PDF generation uses window.print() and CSS print media queries for optimal quality, with fallback to jsPDF if needed.

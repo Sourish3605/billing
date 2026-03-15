@@ -1,0 +1,645 @@
+openapi: 3.1.0
+info:
+  title: Api
+  version: 0.1.0
+  description: GST Billing & Inventory Management API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: auth
+    description: Authentication
+  - name: products
+    description: Product management
+  - name: customers
+    description: Customer management
+  - name: invoices
+    description: Invoice management
+  - name: settings
+    description: Shop settings
+  - name: dashboard
+    description: Dashboard stats
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Admin login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Login success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Admin logout
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /products:
+    get:
+      operationId: listProducts
+      tags: [products]
+      summary: List all products
+      responses:
+        "200":
+          description: Products list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Product"
+    post:
+      operationId: createProduct
+      tags: [products]
+      summary: Create product
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductInput"
+      responses:
+        "201":
+          description: Product created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+
+  /products/{id}:
+    get:
+      operationId: getProduct
+      tags: [products]
+      summary: Get product by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Product
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+    put:
+      operationId: updateProduct
+      tags: [products]
+      summary: Update product
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductInput"
+      responses:
+        "200":
+          description: Product updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+    delete:
+      operationId: deleteProduct
+      tags: [products]
+      summary: Delete product
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /customers:
+    get:
+      operationId: listCustomers
+      tags: [customers]
+      summary: List all customers
+      responses:
+        "200":
+          description: Customers list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Customer"
+    post:
+      operationId: createCustomer
+      tags: [customers]
+      summary: Create customer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CustomerInput"
+      responses:
+        "201":
+          description: Customer created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Customer"
+
+  /customers/{id}:
+    put:
+      operationId: updateCustomer
+      tags: [customers]
+      summary: Update customer
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CustomerInput"
+      responses:
+        "200":
+          description: Customer updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Customer"
+    delete:
+      operationId: deleteCustomer
+      tags: [customers]
+      summary: Delete customer
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /invoices:
+    get:
+      operationId: listInvoices
+      tags: [invoices]
+      summary: List all invoices
+      responses:
+        "200":
+          description: Invoices list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Invoice"
+    post:
+      operationId: createInvoice
+      tags: [invoices]
+      summary: Create invoice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InvoiceInput"
+      responses:
+        "201":
+          description: Invoice created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invoice"
+
+  /invoices/{id}:
+    get:
+      operationId: getInvoice
+      tags: [invoices]
+      summary: Get invoice by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Invoice
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invoice"
+    put:
+      operationId: updateInvoice
+      tags: [invoices]
+      summary: Update invoice
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InvoiceInput"
+      responses:
+        "200":
+          description: Invoice updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invoice"
+
+  /settings:
+    get:
+      operationId: getSettings
+      tags: [settings]
+      summary: Get shop settings
+      responses:
+        "200":
+          description: Shop settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopSettings"
+    put:
+      operationId: updateSettings
+      tags: [settings]
+      summary: Update shop settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShopSettings"
+      responses:
+        "200":
+          description: Settings updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopSettings"
+
+  /dashboard:
+    get:
+      operationId: getDashboard
+      tags: [dashboard]
+      summary: Get dashboard stats
+      responses:
+        "200":
+          description: Dashboard stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required: [status]
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+      required: [success]
+
+    LoginRequest:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+      required: [username, password]
+
+    LoginResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        username:
+          type: string
+      required: [success, username]
+
+    AuthUser:
+      type: object
+      properties:
+        username:
+          type: string
+        authenticated:
+          type: boolean
+      required: [username, authenticated]
+
+    Product:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        hsnCode:
+          type: string
+        unitPrice:
+          type: number
+        quantity:
+          type: integer
+        minStockLevel:
+          type: integer
+        category:
+          type: string
+          enum: [Shoes, Socks, Bags]
+        createdAt:
+          type: string
+      required: [id, name, hsnCode, unitPrice, quantity, minStockLevel, category]
+
+    ProductInput:
+      type: object
+      properties:
+        name:
+          type: string
+        hsnCode:
+          type: string
+        unitPrice:
+          type: number
+        quantity:
+          type: integer
+        minStockLevel:
+          type: integer
+        category:
+          type: string
+          enum: [Shoes, Socks, Bags]
+      required: [name, hsnCode, unitPrice, quantity, minStockLevel, category]
+
+    Customer:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        address:
+          type: string
+        phone:
+          type: string
+        gstin:
+          type: string
+        createdAt:
+          type: string
+      required: [id, name, address, phone]
+
+    CustomerInput:
+      type: object
+      properties:
+        name:
+          type: string
+        address:
+          type: string
+        phone:
+          type: string
+        gstin:
+          type: string
+      required: [name, address, phone]
+
+    InvoiceItem:
+      type: object
+      properties:
+        productId:
+          type: integer
+        description:
+          type: string
+        hsnCode:
+          type: string
+        unitPrice:
+          type: number
+        quantity:
+          type: integer
+        rate:
+          type: number
+        amount:
+          type: number
+        cgstPercent:
+          type: number
+        cgstAmount:
+          type: number
+        sgstPercent:
+          type: number
+        sgstAmount:
+          type: number
+        category:
+          type: string
+          enum: [Shoes, Socks, Bags]
+      required: [description, hsnCode, unitPrice, quantity, rate, amount, cgstPercent, cgstAmount, sgstPercent, sgstAmount]
+
+    Invoice:
+      type: object
+      properties:
+        id:
+          type: integer
+        invoiceNumber:
+          type: string
+        invoiceDate:
+          type: string
+        customerId:
+          type: integer
+        customerName:
+          type: string
+        customerAddress:
+          type: string
+        customerGstin:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/InvoiceItem"
+        totalQuantity:
+          type: number
+        subTotal:
+          type: number
+        totalCgst:
+          type: number
+        totalSgst:
+          type: number
+        grandTotal:
+          type: number
+        roundingOption:
+          type: string
+          enum: [decimal, nearest, custom]
+        customRounding:
+          type: number
+        finalAmount:
+          type: number
+        amountInWords:
+          type: string
+        createdAt:
+          type: string
+      required: [id, invoiceNumber, invoiceDate, customerName, customerAddress, items, totalQuantity, subTotal, totalCgst, totalSgst, grandTotal, roundingOption, finalAmount, amountInWords]
+
+    InvoiceInput:
+      type: object
+      properties:
+        invoiceDate:
+          type: string
+        customerId:
+          type: integer
+        customerName:
+          type: string
+        customerAddress:
+          type: string
+        customerGstin:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/InvoiceItem"
+        totalQuantity:
+          type: number
+        subTotal:
+          type: number
+        totalCgst:
+          type: number
+        totalSgst:
+          type: number
+        grandTotal:
+          type: number
+        roundingOption:
+          type: string
+          enum: [decimal, nearest, custom]
+        customRounding:
+          type: number
+        finalAmount:
+          type: number
+        amountInWords:
+          type: string
+      required: [invoiceDate, customerName, customerAddress, items, totalQuantity, subTotal, totalCgst, totalSgst, grandTotal, roundingOption, finalAmount, amountInWords]
+
+    ShopSettings:
+      type: object
+      properties:
+        shopName:
+          type: string
+        address:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        pincode:
+          type: string
+        gstin:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+      required: [shopName, address, city, state, pincode, gstin, phone, email]
+
+    DashboardStats:
+      type: object
+      properties:
+        todaySales:
+          type: number
+        totalInvoices:
+          type: integer
+        totalProducts:
+          type: integer
+        lowStockProducts:
+          type: array
+          items:
+            $ref: "#/components/schemas/Product"
+      required: [todaySales, totalInvoices, totalProducts, lowStockProducts]
