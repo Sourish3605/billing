@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { useGetMe, getGetMeQueryKey, useLogin, useLogout, type LoginRequest } from "@workspace/api-client-react";
+import { getMe, useGetMe, getGetMeQueryKey, useLogin, useLogout, type LoginRequest } from "@workspace/api-client-react";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 
@@ -8,8 +8,9 @@ export function useAuth() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
-  const { data: user, isLoading, isError } = useGetMe({
+  const { data: user, isLoading } = useGetMe({
     query: {
+      queryKey: getGetMeQueryKey(),
       retry: false,
       refetchOnWindowFocus: false,
     }
@@ -17,10 +18,25 @@ export function useAuth() {
 
   const loginMutation = useLogin({
     mutation: {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
-        setLocation("/dashboard");
-        toast({ title: "Welcome back", description: "Logged in successfully" });
+      onSuccess: async (data) => {
+        queryClient.setQueryData(getGetMeQueryKey(), {
+          username: data.username,
+          authenticated: true,
+        });
+
+        try {
+          const me = await getMe();
+          queryClient.setQueryData(getGetMeQueryKey(), me);
+          setLocation("/dashboard");
+          toast({ title: "Welcome back", description: "Logged in successfully" });
+        } catch {
+          queryClient.setQueryData(getGetMeQueryKey(), null);
+          toast({
+            title: "Session issue",
+            description: "Login response succeeded, but the session cookie was not established. Please allow cookies and try again.",
+            variant: "destructive",
+          });
+        }
       },
       onError: () => {
         toast({ title: "Login failed", description: "Invalid credentials", variant: "destructive" });
