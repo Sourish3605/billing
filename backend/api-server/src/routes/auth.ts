@@ -19,6 +19,25 @@ router.post("/login", async (req, res) => {
   }
 
   (req.session as any).admin = { username: admin[0].username };
+
+  // Persist session before responding to avoid race conditions where
+  // /auth/me is called before the session record is committed.
+  await new Promise<void>((resolve, reject) => {
+    req.session.save((error) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve();
+    });
+  }).catch(() => {
+    res.status(500).json({ error: "Failed to establish login session" });
+  });
+
+  if (res.headersSent) {
+    return;
+  }
+
   res.json({ success: true, username: admin[0].username });
 });
 

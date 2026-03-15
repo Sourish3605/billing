@@ -25,7 +25,7 @@ const allowedOrigins = (process.env.FRONTEND_ORIGIN || "")
   .map((origin) => normalizeOrigin(origin))
   .filter(Boolean);
 
-app.set("trust proxy", 1);
+app.set("trust proxy", true);
 
 app.use(cors({
   origin: (origin, callback) => {
