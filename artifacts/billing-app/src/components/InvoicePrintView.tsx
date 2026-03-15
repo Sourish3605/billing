@@ -90,10 +90,11 @@ export function InvoicePrintView({ invoice, settings }: InvoicePrintViewProps) {
         <thead>
           <tr className="bg-gray-100">
             <th className="p-1.5 border print-border w-[5%] text-center font-bold">S.No</th>
-            <th className="p-1.5 border print-border w-[44%] font-bold">Description of Goods</th>
-            <th className="p-1.5 border print-border w-[10%] text-center font-bold">HSN/SAC</th>
-            <th className="p-1.5 border print-border w-[12%] text-center font-bold">Qty (Pairs)</th>
-            <th className="p-1.5 border print-border w-[13%] text-right font-bold">Rate</th>
+            <th className="p-1.5 border print-border w-[37%] font-bold">Description of Goods</th>
+            <th className="p-1.5 border print-border w-[9%] text-center font-bold">HSN/SAC</th>
+            <th className="p-1.5 border print-border w-[10%] text-center font-bold">Qty (Pairs)</th>
+            <th className="p-1.5 border print-border w-[13%] text-right font-bold">Unit Price</th>
+            <th className="p-1.5 border print-border w-[10%] text-right font-bold">Rate</th>
             <th className="p-1.5 border print-border w-[16%] text-right font-bold">Amount</th>
           </tr>
         </thead>
@@ -102,7 +103,7 @@ export function InvoicePrintView({ invoice, settings }: InvoicePrintViewProps) {
             if (row.type === "heading") {
               return (
                 <tr key={`heading-${idx}`}>
-                  <td colSpan={6} className="p-1.5 border print-border font-bold text-center bg-gray-50 tracking-widest text-[11px] uppercase">
+                  <td colSpan={7} className="p-1.5 border print-border font-bold text-center bg-gray-50 tracking-widest text-[11px] uppercase">
                     {row.label}
                   </td>
                 </tr>
@@ -121,6 +122,9 @@ export function InvoicePrintView({ invoice, settings }: InvoicePrintViewProps) {
                 <td className="p-1.5 border print-border text-center">{item.hsnCode}</td>
                 <td className="p-1.5 border print-border text-center">{item.quantity}</td>
                 <td className="p-1.5 border print-border text-right">
+                  {Number(item.unitPrice) > 0 ? Number(item.unitPrice).toFixed(2) : ""}
+                </td>
+                <td className="p-1.5 border print-border text-right">
                   {isShoe || Number(item.rate) > 0 ? Number(item.rate).toFixed(2) : ""}
                 </td>
                 <td className="p-1.5 border print-border text-right">{Number(item.amount).toFixed(2)}</td>
@@ -135,6 +139,7 @@ export function InvoicePrintView({ invoice, settings }: InvoicePrintViewProps) {
               <td className="p-1.5 border print-border">&nbsp;</td>
               <td className="p-1.5 border print-border">&nbsp;</td>
               <td className="p-1.5 border print-border">&nbsp;</td>
+              <td className="p-1.5 border print-border">&nbsp;</td>
             </tr>
           ))}
         </tbody>
@@ -142,6 +147,7 @@ export function InvoicePrintView({ invoice, settings }: InvoicePrintViewProps) {
           <tr className="font-bold bg-gray-50">
             <td colSpan={3} className="p-1.5 border print-border text-right">Total:</td>
             <td className="p-1.5 border print-border text-center">{invoice.totalQuantity}</td>
+            <td className="p-1.5 border print-border"></td>
             <td className="p-1.5 border print-border"></td>
             <td className="p-1.5 border print-border text-right">{Number(invoice.subTotal).toFixed(2)}</td>
           </tr>
@@ -189,7 +195,14 @@ export function InvoicePrintView({ invoice, settings }: InvoicePrintViewProps) {
           <p className="text-[10px] text-gray-500 mt-3 italic">This is a computer-generated invoice.</p>
         </div>
         <div className="w-1/3 text-center">
-          <p className="font-bold mb-8 text-[13px]">For {settings.shopName}</p>
+          <p className="font-bold mb-2 text-[13px]">For {settings.shopName}</p>
+          <div className="h-12 mb-2 flex items-end justify-center">
+            <img
+              src={`${import.meta.env.BASE_URL}images/signature.svg`}
+              alt="Authorized signature"
+              className="h-12 max-w-42.5 object-contain"
+            />
+          </div>
           <p className="border-t print-border-t pt-1 text-[12px]">Authorized Signatory</p>
         </div>
       </div>
