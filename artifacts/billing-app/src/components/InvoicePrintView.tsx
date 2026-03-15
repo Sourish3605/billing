@@ -92,8 +92,8 @@ export function InvoicePrintView({ invoice, settings }: InvoicePrintViewProps) {
             <th className="p-1.5 border print-border w-[5%] text-center font-bold">S.No</th>
             <th className="p-1.5 border print-border w-[37%] font-bold">Description of Goods</th>
             <th className="p-1.5 border print-border w-[9%] text-center font-bold">HSN/SAC</th>
-            <th className="p-1.5 border print-border w-[10%] text-center font-bold">Qty (Pairs)</th>
             <th className="p-1.5 border print-border w-[13%] text-right font-bold">Unit Price</th>
+            <th className="p-1.5 border print-border w-[10%] text-center font-bold">Qty (Pairs)</th>
             <th className="p-1.5 border print-border w-[10%] text-right font-bold">Rate</th>
             <th className="p-1.5 border print-border w-[16%] text-right font-bold">Amount</th>
           </tr>
@@ -120,10 +120,10 @@ export function InvoicePrintView({ invoice, settings }: InvoicePrintViewProps) {
                   <div className="text-[10px] uppercase tracking-wide text-gray-600">{cat}</div>
                 </td>
                 <td className="p-1.5 border print-border text-center">{item.hsnCode}</td>
-                <td className="p-1.5 border print-border text-center">{item.quantity}</td>
                 <td className="p-1.5 border print-border text-right">
                   {Number(item.unitPrice) > 0 ? Number(item.unitPrice).toFixed(2) : ""}
                 </td>
+                <td className="p-1.5 border print-border text-center">{item.quantity}</td>
                 <td className="p-1.5 border print-border text-right">
                   {isShoe || Number(item.rate) > 0 ? Number(item.rate).toFixed(2) : ""}
                 </td>
@@ -145,9 +145,8 @@ export function InvoicePrintView({ invoice, settings }: InvoicePrintViewProps) {
         </tbody>
         <tfoot>
           <tr className="font-bold bg-gray-50">
-            <td colSpan={3} className="p-1.5 border print-border text-right">Total:</td>
+            <td colSpan={4} className="p-1.5 border print-border text-right">Total:</td>
             <td className="p-1.5 border print-border text-center">{invoice.totalQuantity}</td>
-            <td className="p-1.5 border print-border"></td>
             <td className="p-1.5 border print-border"></td>
             <td className="p-1.5 border print-border text-right">{Number(invoice.subTotal).toFixed(2)}</td>
           </tr>
