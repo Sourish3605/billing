@@ -5,9 +5,14 @@ import router from "./routes/index.js";
 
 const app: Express = express();
 const isProduction = process.env.NODE_ENV === "production";
+
+function normalizeOrigin(origin: string): string {
+  return origin.trim().replace(/\/+$/, "");
+}
+
 const allowedOrigins = (process.env.FRONTEND_ORIGIN || "")
   .split(",")
-  .map((origin) => origin.trim())
+  .map((origin) => normalizeOrigin(origin))
   .filter(Boolean);
 
 app.set("trust proxy", 1);
@@ -19,7 +24,9 @@ app.use(cors({
       return;
     }
 
-    if (allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+    const normalizedOrigin = normalizeOrigin(origin);
+
+    if (allowedOrigins.length === 0 || allowedOrigins.includes(normalizedOrigin)) {
       callback(null, true);
       return;
     }
