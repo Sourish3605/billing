@@ -3,6 +3,14 @@ import { getMe, useGetMe, getGetMeQueryKey, useLogin, useLogout, type LoginReque
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 
+type ApiLikeError = {
+  status?: number;
+  message?: string;
+  data?: {
+    error?: string;
+  };
+};
+
 export function useAuth() {
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
@@ -38,8 +46,20 @@ export function useAuth() {
           });
         }
       },
-      onError: () => {
-        toast({ title: "Login failed", description: "Invalid credentials", variant: "destructive" });
+      onError: (error: unknown) => {
+        const e = error as ApiLikeError;
+        const status = e?.status;
+        const backendError = e?.data?.error;
+        const description =
+          status === 401
+            ? "Invalid credentials"
+            : (backendError || e?.message || "Unable to login right now. Please try again.");
+
+        toast({
+          title: "Login failed",
+          description,
+          variant: "destructive",
+        });
       }
     }
   });
