@@ -318,8 +318,8 @@ export default function InvoiceForm() {
                   <thead>
                     <tr className="bg-muted text-xs uppercase tracking-wider text-muted-foreground">
                       <th className="p-3 w-8">S.No</th>
-                      <th className="p-3 w-[40%]">Description of Goods</th>
-                      <th className="p-3 w-36">HSN/SAC</th>
+                      <th className="p-3 w-[65%]">Description of Goods</th>
+                      <th className="p-3 w-24">HSN/SAC</th>
                       <th className="p-3 w-28">Unit Price</th>
                       <th className="p-3 w-28">PCT %</th>
                       <th className="p-3 w-24">Quantity</th>
@@ -335,8 +335,8 @@ export default function InvoiceForm() {
                       return (
                         <tr key={index} className="group hover:bg-muted/10">
                           <td className="p-3 text-sm text-muted-foreground">{index + 1}</td>
-                          <td className="p-3 w-[40%]">
-                            <div className="flex flex-col gap-1">
+                          <td className="p-3 w-[65%]">
+                            <div className="flex flex-col gap-2">
                               <select
                                 className="p-1.5 border rounded text-sm w-full"
                                 value={item.productId || ""}
@@ -347,11 +347,11 @@ export default function InvoiceForm() {
                                   <option key={p.id} value={p.id}>[{p.category}] {p.name}</option>
                                 ))}
                               </select>
-                              <input
+                              <textarea
                                 placeholder="Description"
                                 value={item.description}
                                 onChange={e => updateRow(index, "description", e.target.value)}
-                                className="p-1.5 border rounded text-sm w-full"
+                                className="w-full p-2.5 border rounded text-sm h-24 resize-vertical"
                               />
                               <span className={`self-start text-[10px] font-bold px-1.5 py-0.5 rounded ${
                                 cat === "Shoes" ? "bg-blue-100 text-blue-700" :
