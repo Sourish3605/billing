@@ -93,13 +93,13 @@ export function InvoicePrintView({ invoice, settings }: InvoicePrintViewProps) {
       <table className="relative z-10 w-full print-table border-collapse mb-4 text-[11px]">
         <thead>
           <tr className="bg-gray-100">
-            <th className="p-1.5 border print-border w-[5%] text-center font-bold">S.No</th>
-            <th className="p-1.5 border print-border w-[37%] font-bold">Description of Goods</th>
-            <th className="p-1.5 border print-border w-[9%] text-center font-bold">HSN/SAC</th>
-            <th className="p-1.5 border print-border w-[13%] text-right font-bold">Unit Price</th>
-            <th className="p-1.5 border print-border w-[10%] text-center font-bold">Qty (Pairs)</th>
-            <th className="p-1.5 border print-border w-[10%] text-right font-bold">Rate</th>
-            <th className="p-1.5 border print-border w-[16%] text-right font-bold">Amount</th>
+            <th className="p-1.5 border print-border w-[6%] text-center font-bold">S.No</th>
+            <th className="p-1.5 border print-border w-[36%] font-bold">Description of Goods</th>
+            <th className="p-1.5 border print-border w-[10%] text-center font-bold">HSN/SAC</th>
+            <th className="p-1.5 border print-border w-[12%] text-right font-bold">Unit Price</th>
+            <th className="p-1.5 border print-border w-[10%] text-center font-bold">Quantity</th>
+            <th className="p-1.5 border print-border w-[11%] text-right font-bold">Rate</th>
+            <th className="p-1.5 border print-border w-[15%] text-right font-bold">Amount</th>
           </tr>
         </thead>
         <tbody>
@@ -116,6 +116,7 @@ export function InvoicePrintView({ invoice, settings }: InvoicePrintViewProps) {
             const { item, sno } = row;
             const cat = (item.category || "Shoes") as Category;
             const isShoe = cat === "Shoes";
+            const manualPercentValue = typeof (item as any).manualPercent === "number" ? Number((item as any).manualPercent) : undefined;
             return (
               <tr key={`item-${idx}`}>
                 <td className="p-1.5 border print-border text-center">{sno}</td>

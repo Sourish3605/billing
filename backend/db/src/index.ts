@@ -8,7 +8,9 @@ import { fileURLToPath } from "url";
 const { Pool } = pg;
 
 function loadDatabaseUrl(): string | undefined {
+  // Prefer explicit DATABASE_URL, fall back to NEON_DIRECT_DATABASE_URL if provided
   if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
+  if (process.env.NEON_DIRECT_DATABASE_URL) return process.env.NEON_DIRECT_DATABASE_URL;
   try {
     const filePath = fileURLToPath(new URL('../DATABASE_URL.local', import.meta.url));
     if (fs.existsSync(filePath)) {

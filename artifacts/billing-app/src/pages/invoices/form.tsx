@@ -27,15 +27,15 @@ function normalizePercentText(value: string): string {
 
 /**
  * Rate calculation — ONLY for Shoes.
- * Uses the manually entered GST percent so the rate can be customized.
- * Formula: ROUND(((UnitPrice - UnitPrice × GST/100) × 100) / 105)
+ * Uses the manually entered percentage so the rate can be customized.
+ * Formula: ROUND(((Unit Price - (Unit Price × PCT% ÷ 100)) × 100) ÷ 105)
  */
 function calcShoeRate(unitPrice: number, gstPct: number): number {
   const raw = ((unitPrice - (unitPrice * gstPct) / 100) * 100) / 105;
   return Math.round(raw); // < 0.5 → down, ≥ 0.5 → up
 }
 
-type UIInvoiceItem = InvoiceItem & { autoRate?: boolean };
+type UIInvoiceItem = InvoiceItem & { autoRate?: boolean; manualPercent?: number };
 
 const emptyItem = (): UIInvoiceItem => ({
   description: "",
@@ -44,6 +44,7 @@ const emptyItem = (): UIInvoiceItem => ({
   quantity: 1,
   rate: 0,
   amount: 0,
+  manualPercent: 0,
   cgstPercent: 0,
   cgstAmount: 0,
   sgstPercent: 0,
@@ -156,20 +157,21 @@ export default function InvoiceForm() {
   const recalcItem = (item: UIInvoiceItem): UIInvoiceItem => {
     const up = Number(item.unitPrice) || 0;
     const qty = Number(item.quantity) || 0;
+    const manualPercent = Number(item.manualPercent) || 0;
     const cgstP = parsePercentInput(cgstPercent);
     const sgstP = parsePercentInput(sgstPercent);
     const igstP = parsePercentInput(igstPercent);
     const totalTaxPercent = cgstP + sgstP + igstP;
     const cat = (item.category || "Shoes") as Category;
-    // Determine rate: use autoRate when enabled, otherwise use manual rate
-    const useAuto = item.autoRate ?? (cat === "Shoes");
-    const rate = useAuto ? calcShoeRate(up, totalTaxPercent) : (Number(item.rate) || 0);
+    const useAuto = cat === "Shoes" && (item.autoRate ?? true);
+    const rate = useAuto ? calcShoeRate(up, manualPercent) : (Number(item.rate) || 0);
     const amount = rate * qty;
 
     return {
       ...item,
       rate,
       amount,
+      manualPercent,
       cgstPercent: cgstP,
       cgstAmount: amount * (cgstP / 100),
       sgstPercent: sgstP,
@@ -186,8 +188,10 @@ export default function InvoiceForm() {
 
   const updateRow = (index: number, field: keyof UIInvoiceItem, value: any) => {
     const newItems = [...items];
-    // Always store productId as a number so the backend can match it in the DB
-    const coercedValue = field === "productId" ? (value ? parseInt(value) : undefined) : value;
+    let coercedValue: any = value;
+    if (field === "productId") coercedValue = value ? parseInt(value) : undefined;
+    if (field === "manualPercent") coercedValue = Number(value) || 0;
+    if (field === "quantity" || field === "unitPrice") coercedValue = Number(value) || 0;
     let item = { ...newItems[index], [field]: coercedValue };
 
     // Auto-fill from product selection
@@ -198,9 +202,8 @@ export default function InvoiceForm() {
         item.hsnCode = p.hsnCode;
         item.unitPrice = p.unitPrice;
         item.category = (p.category || "Shoes") as Category;
-        // Default autoRate based on category
-        item.autoRate = item.category === "Shoes" ? true : false;
-        if (item.category !== "Shoes") item.rate = 0;
+        // Default autoRate only for shoes
+        item.autoRate = item.category === "Shoes";
       }
     }
 
@@ -234,7 +237,7 @@ export default function InvoiceForm() {
 
   const handleSave = async () => {
     if (!invoiceNumber.trim() || !customerName || items.length === 0) return alert("Please fill required fields");
-    const sanitizedItems: InvoiceItem[] = items.map(({ autoRate, ...rest }) => rest as InvoiceItem);
+    const sanitizedItems: InvoiceItem[] = items.map(({ autoRate, manualPercent, ...rest }) => rest as InvoiceItem);
 
     const payload: InvoiceInput & { invoiceNumber: string } = {
       invoiceNumber: invoiceNumber.trim(),
@@ -314,11 +317,12 @@ export default function InvoiceForm() {
                 <table className="w-full text-left border-collapse min-w-225">
                   <thead>
                     <tr className="bg-muted text-xs uppercase tracking-wider text-muted-foreground">
-                      <th className="p-3 w-8">#</th>
-                      <th className="p-3">Product / Shoe Description</th>
-                      <th className="p-3 w-20">HSN</th>
+                      <th className="p-3 w-8">S.No</th>
+                      <th className="p-3">Description of Goods</th>
+                      <th className="p-3 w-20">HSN/SAC</th>
                       <th className="p-3 w-24">Unit Price</th>
-                      <th className="p-3 w-16">Qty (Pairs)</th>
+                      <th className="p-3 w-20">PCT %</th>
+                      <th className="p-3 w-16">Quantity</th>
                       <th className="p-3 w-36">Rate</th>
                       <th className="p-3 w-22">Amount</th>
                       <th className="p-3 w-8"></th>
@@ -357,28 +361,68 @@ export default function InvoiceForm() {
                             </div>
                           </td>
                           <td className="p-3">
+                            <input
+                              placeholder="HSN/SAC"
+                              value={item.hsnCode || ""}
+                              onChange={e => updateRow(index, "hsnCode", e.target.value)}
+                              className="w-full p-1.5 border rounded text-sm"
+                            />
+                          </td>
+                          <td className="p-3">
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={item.unitPrice === 0 ? "" : item.unitPrice}
+                              onChange={e => updateRow(index, "unitPrice", e.target.value)}
+                              className="w-full p-1.5 border rounded text-sm"
+                            />
+                          </td>
+                          <td className="p-3">
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={item.manualPercent || ""}
+                              placeholder="0"
+                              onChange={e => updateRow(index, "manualPercent", Number(e.target.value) || 0)}
+                              className="w-full p-1.5 border rounded text-sm"
+                            />
+                          </td>
+                          <td className="p-3">
                             <input type="number" value={item.quantity === 0 ? "" : item.quantity} onChange={e => updateRow(index, "quantity", e.target.value)} className="w-full p-1.5 border rounded text-sm" />
                           </td>
                           <td className="p-3">
                             <div className="flex items-center gap-2">
-                              <label className="flex items-center gap-2 text-xs">
-                                <input
-                                  type="checkbox"
-                                  checked={Boolean((item as UIInvoiceItem).autoRate)}
-                                  onChange={e => {
-                                    const newItems = [...items];
-                                    const updated = { ...newItems[index], autoRate: e.target.checked } as UIInvoiceItem;
-                                    newItems[index] = recalcItem(updated);
-                                    setItems(newItems);
-                                  }}
-                                />
-                                <span className="select-none">Auto</span>
-                              </label>
+                              {isShoe ? (
+                                <>
+                                  <label className="flex items-center gap-2 text-xs">
+                                    <input
+                                      type="checkbox"
+                                      checked={Boolean((item as UIInvoiceItem).autoRate)}
+                                      onChange={e => {
+                                        const newItems = [...items];
+                                        const updated = { ...newItems[index], autoRate: e.target.checked } as UIInvoiceItem;
+                                        newItems[index] = recalcItem(updated);
+                                        setItems(newItems);
+                                      }}
+                                    />
+                                    <span className="select-none">Auto</span>
+                                  </label>
 
-                              {((item as UIInvoiceItem).autoRate) ? (
-                                <span className="w-36 p-2 block text-sm font-mono bg-muted/40 rounded text-center">
-                                  {Number(item.rate) > 0 ? Number(item.rate).toFixed(2) : "\u00A0"}
-                                </span>
+                                  {((item as UIInvoiceItem).autoRate) ? (
+                                    <span className="w-36 p-2 block text-sm font-mono bg-muted/40 rounded text-center">
+                                      {Number(item.rate) > 0 ? Number(item.rate).toFixed(2) : "\u00A0"}
+                                    </span>
+                                  ) : (
+                                    <input
+                                      type="number"
+                                      step="0.01"
+                                      value={item.rate || ""}
+                                      placeholder="Manual"
+                                      onChange={e => updateRate(index, e.target.value)}
+                                      className="w-36 p-1.5 border-2 border-dashed border-amber-400 rounded text-sm bg-amber-50"
+                                    />
+                                  )}
+                                </>
                               ) : (
                                 <input
                                   type="number"
@@ -417,8 +461,8 @@ export default function InvoiceForm() {
                 </button>
               </div>
               <p className="mt-2 text-xs text-muted-foreground">
-                <span className="font-semibold">Shoes:</span> Rate is auto-calculated from the GST percentages below.
-                &nbsp;<span className="font-semibold">Socks/Bags:</span> Enter Rate manually.
+                <span className="font-semibold">Shoes:</span> Enter a manual percent and Auto will calculate Rate from Unit Price using the configured formula.
+                &nbsp;<span className="font-semibold">Socks/Bags:</span> Rate must be entered manually.
                 &nbsp;Leave GST fields blank to treat them as 0.
               </p>
             </div>
