@@ -75,7 +75,7 @@ export interface Customer {
   id: number;
   name: string;
   address: string;
-  phone: string;
+  phone?: string;
   gstin?: string;
   createdAt?: string;
 }
@@ -83,7 +83,7 @@ export interface Customer {
 export interface CustomerInput {
   name: string;
   address: string;
-  phone: string;
+  phone?: string;
   gstin?: string;
 }
 
@@ -108,6 +108,8 @@ export interface InvoiceItem {
   cgstAmount: number;
   sgstPercent: number;
   sgstAmount: number;
+  igstPercent: number;
+  igstAmount: number;
   category?: InvoiceItemCategory;
 }
 
@@ -133,6 +135,7 @@ export interface Invoice {
   subTotal: number;
   totalCgst: number;
   totalSgst: number;
+  totalIgst: number;
   grandTotal: number;
   roundingOption: InvoiceRoundingOption;
   customRounding?: number;
@@ -161,6 +164,7 @@ export interface InvoiceInput {
   subTotal: number;
   totalCgst: number;
   totalSgst: number;
+  totalIgst: number;
   grandTotal: number;
   roundingOption: InvoiceInputRoundingOption;
   customRounding?: number;

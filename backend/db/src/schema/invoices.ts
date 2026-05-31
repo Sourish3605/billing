@@ -15,6 +15,7 @@ export const invoicesTable = pgTable("invoices", {
   subTotal: numeric("sub_total", { precision: 12, scale: 2 }).notNull().default("0"),
   totalCgst: numeric("total_cgst", { precision: 12, scale: 2 }).notNull().default("0"),
   totalSgst: numeric("total_sgst", { precision: 12, scale: 2 }).notNull().default("0"),
+  totalIgst: numeric("total_igst", { precision: 12, scale: 2 }).notNull().default("0"),
   grandTotal: numeric("grand_total", { precision: 12, scale: 2 }).notNull().default("0"),
   roundingOption: text("rounding_option").notNull().default("decimal"),
   customRounding: numeric("custom_rounding", { precision: 12, scale: 2 }),

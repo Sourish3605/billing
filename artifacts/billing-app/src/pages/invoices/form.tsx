@@ -13,31 +13,45 @@ import { format } from "date-fns";
 
 type Category = "Shoes" | "Socks" | "Bags";
 
-const SPECIAL_PRICES = [999, 1099, 1199];
+function parsePercentInput(value: string): number {
+  const trimmed = value.trim().replace(/%/g, "");
+  if (trimmed === "") return 0;
+  const parsed = Number(trimmed);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function normalizePercentText(value: string): string {
+  const cleaned = value.replace(/[^0-9.]/g, "");
+  return cleaned;
+}
 
 /**
  * Rate calculation — ONLY for Shoes.
- * If price is 999, 1099, or 1199 → GST = 15%, else GST = 18%.
+ * Uses the manually entered GST percent so the rate can be customized.
  * Formula: ROUND(((UnitPrice - UnitPrice × GST/100) × 100) / 105)
  */
-function calcShoeRate(unitPrice: number): number {
-  const gstPct = SPECIAL_PRICES.includes(unitPrice) ? 15 : 18;
+function calcShoeRate(unitPrice: number, gstPct: number): number {
   const raw = ((unitPrice - (unitPrice * gstPct) / 100) * 100) / 105;
   return Math.round(raw); // < 0.5 → down, ≥ 0.5 → up
 }
 
-const emptyItem = (): InvoiceItem => ({
+type UIInvoiceItem = InvoiceItem & { autoRate?: boolean };
+
+const emptyItem = (): UIInvoiceItem => ({
   description: "",
   hsnCode: "",
   unitPrice: 0,
   quantity: 1,
   rate: 0,
   amount: 0,
-  cgstPercent: 9,
+  cgstPercent: 0,
   cgstAmount: 0,
-  sgstPercent: 9,
+  sgstPercent: 0,
   sgstAmount: 0,
+  igstPercent: 0,
+  igstAmount: 0,
   category: "Shoes",
+  autoRate: true,
 });
 
 function getNextInvoiceNumber(invoices?: Array<{ invoiceNumber: string }>): string {
@@ -75,9 +89,10 @@ export default function InvoiceForm() {
   const [customerAddress, setCustomerAddress] = useState("");
   const [customerGstin, setCustomerGstin] = useState("");
   const [customerId, setCustomerId] = useState<number | undefined>(undefined);
-  const [items, setItems] = useState<InvoiceItem[]>([emptyItem()]);
-  const [cgstPercent, setCgstPercent] = useState<number>(9);
-  const [sgstPercent, setSgstPercent] = useState<number>(9);
+  const [items, setItems] = useState<UIInvoiceItem[]>([emptyItem()]);
+  const [cgstPercent, setCgstPercent] = useState<string>("");
+  const [sgstPercent, setSgstPercent] = useState<string>("");
+  const [igstPercent, setIgstPercent] = useState<string>("");
   const [roundingOption, setRoundingOption] = useState<InvoiceInputRoundingOption>("nearest");
   const [customRounding, setCustomRounding] = useState<number>(0);
 
@@ -104,11 +119,18 @@ export default function InvoiceForm() {
           : invoiceToEdit.subTotal > 0
             ? (invoiceToEdit.totalSgst / invoiceToEdit.subTotal) * 100
             : 0;
+      const derivedIgst =
+        typeof firstItem?.igstPercent === "number"
+          ? firstItem.igstPercent
+          : invoiceToEdit.subTotal > 0
+            ? (invoiceToEdit.totalIgst / invoiceToEdit.subTotal) * 100
+            : 0;
 
-      setCgstPercent(Number.isFinite(derivedCgst) ? Number(derivedCgst.toFixed(2)) : 0);
-      setSgstPercent(Number.isFinite(derivedSgst) ? Number(derivedSgst.toFixed(2)) : 0);
+      setCgstPercent(Number.isFinite(derivedCgst) && derivedCgst > 0 ? derivedCgst.toFixed(2) : "");
+      setSgstPercent(Number.isFinite(derivedSgst) && derivedSgst > 0 ? derivedSgst.toFixed(2) : "");
+      setIgstPercent(Number.isFinite(derivedIgst) && derivedIgst > 0 ? derivedIgst.toFixed(2) : "");
 
-      setItems(invoiceToEdit.items);
+      setItems((invoiceToEdit.items || []).map(i => recalcItem({ ...(i as UIInvoiceItem), autoRate: (i.category === "Shoes") })));
       setRoundingOption(invoiceToEdit.roundingOption as InvoiceInputRoundingOption);
       setCustomRounding(invoiceToEdit.customRounding || 0);
     }
@@ -131,46 +153,38 @@ export default function InvoiceForm() {
     }
   };
 
-  const recalcItem = (item: InvoiceItem): InvoiceItem => {
+  const recalcItem = (item: UIInvoiceItem): UIInvoiceItem => {
     const up = Number(item.unitPrice) || 0;
     const qty = Number(item.quantity) || 0;
-    const cgstP = Number(cgstPercent) || 0;
-    const sgstP = Number(sgstPercent) || 0;
+    const cgstP = parsePercentInput(cgstPercent);
+    const sgstP = parsePercentInput(sgstPercent);
+    const igstP = parsePercentInput(igstPercent);
+    const totalTaxPercent = cgstP + sgstP + igstP;
     const cat = (item.category || "Shoes") as Category;
+    // Determine rate: use autoRate when enabled, otherwise use manual rate
+    const useAuto = item.autoRate ?? (cat === "Shoes");
+    const rate = useAuto ? calcShoeRate(up, totalTaxPercent) : (Number(item.rate) || 0);
+    const amount = rate * qty;
 
-    if (cat === "Shoes") {
-      const rate = calcShoeRate(up);
-      const amount = rate * qty;
-      return {
-        ...item,
-        rate,
-        amount,
-        cgstPercent: cgstP,
-        cgstAmount: amount * (cgstP / 100),
-        sgstPercent: sgstP,
-        sgstAmount: amount * (sgstP / 100),
-      };
-    } else {
-      // Socks / Bags: keep rate as-is (manual), just recalc amount/tax
-      const rate = Number(item.rate) || 0;
-      const amount = rate * qty;
-      return {
-        ...item,
-        rate,
-        amount,
-        cgstPercent: cgstP,
-        cgstAmount: amount * (cgstP / 100),
-        sgstPercent: sgstP,
-        sgstAmount: amount * (sgstP / 100),
-      };
-    }
+    return {
+      ...item,
+      rate,
+      amount,
+      cgstPercent: cgstP,
+      cgstAmount: amount * (cgstP / 100),
+      sgstPercent: sgstP,
+      sgstAmount: amount * (sgstP / 100),
+      igstPercent: igstP,
+      igstAmount: amount * (igstP / 100),
+      autoRate: useAuto,
+    };
   };
 
   useEffect(() => {
     setItems((prev) => prev.map((item) => recalcItem(item)));
-  }, [cgstPercent, sgstPercent]);
+  }, [cgstPercent, sgstPercent, igstPercent]);
 
-  const updateRow = (index: number, field: keyof InvoiceItem, value: any) => {
+  const updateRow = (index: number, field: keyof UIInvoiceItem, value: any) => {
     const newItems = [...items];
     // Always store productId as a number so the backend can match it in the DB
     const coercedValue = field === "productId" ? (value ? parseInt(value) : undefined) : value;
@@ -184,10 +198,9 @@ export default function InvoiceForm() {
         item.hsnCode = p.hsnCode;
         item.unitPrice = p.unitPrice;
         item.category = (p.category || "Shoes") as Category;
-        // Reset rate for Socks/Bags when product changes
-        if (item.category !== "Shoes") {
-          item.rate = 0;
-        }
+        // Default autoRate based on category
+        item.autoRate = item.category === "Shoes" ? true : false;
+        if (item.category !== "Shoes") item.rate = 0;
       }
     }
 
@@ -196,18 +209,22 @@ export default function InvoiceForm() {
   };
 
   const updateRate = (index: number, value: string) => {
-    // Manual rate override for Socks/Bags
+    // Manual rate override — mark autoRate false
     const newItems = [...items];
-    const item = { ...newItems[index], rate: parseFloat(value) || 0 };
+    const item = { ...newItems[index], rate: parseFloat(value) || 0, autoRate: false } as UIInvoiceItem;
     newItems[index] = recalcItem(item);
     setItems(newItems);
   };
 
   const totalQuantity = items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
   const subTotal = items.reduce((sum, item) => sum + (item.amount || 0), 0);
-  const totalCgst = subTotal * ((Number(cgstPercent) || 0) / 100);
-  const totalSgst = subTotal * ((Number(sgstPercent) || 0) / 100);
-  const grandTotal = subTotal + totalCgst + totalSgst;
+  const cgstPercentValue = parsePercentInput(cgstPercent);
+  const sgstPercentValue = parsePercentInput(sgstPercent);
+  const igstPercentValue = parsePercentInput(igstPercent);
+  const totalCgst = subTotal * (cgstPercentValue / 100);
+  const totalSgst = subTotal * (sgstPercentValue / 100);
+  const totalIgst = subTotal * (igstPercentValue / 100);
+  const grandTotal = subTotal + totalCgst + totalSgst + totalIgst;
 
   let finalAmount = grandTotal;
   if (roundingOption === "nearest") finalAmount = Math.round(grandTotal);
@@ -217,10 +234,12 @@ export default function InvoiceForm() {
 
   const handleSave = async () => {
     if (!invoiceNumber.trim() || !customerName || items.length === 0) return alert("Please fill required fields");
+    const sanitizedItems: InvoiceItem[] = items.map(({ autoRate, ...rest }) => rest as InvoiceItem);
+
     const payload: InvoiceInput & { invoiceNumber: string } = {
       invoiceNumber: invoiceNumber.trim(),
       invoiceDate, customerId, customerName, customerAddress, customerGstin,
-      items, totalQuantity, subTotal, totalCgst, totalSgst, grandTotal,
+      items: sanitizedItems, totalQuantity, subTotal, totalCgst, totalSgst, totalIgst, grandTotal,
       roundingOption, customRounding, finalAmount, amountInWords,
     };
     try {
@@ -240,14 +259,14 @@ export default function InvoiceForm() {
   const previewInvoice: any = {
     invoiceNumber: invoiceNumber || invoiceToEdit?.invoiceNumber || "01",
     invoiceDate, customerName, customerAddress, customerGstin, items,
-    totalQuantity, subTotal, totalCgst, totalSgst, grandTotal, finalAmount, amountInWords,
+    totalQuantity, subTotal, totalCgst, totalSgst, totalIgst, grandTotal, finalAmount, amountInWords,
   };
 
   return (
     <AppLayout>
       <div className="no-print">
         <div className="flex items-center gap-4 mb-6">
-          <button onClick={() => setLocation("/invoices")} className="p-2 hover:bg-secondary rounded-full"><ArrowLeft className="h-5 w-5" /></button>
+          <button type="button" onClick={() => setLocation("/invoices")} className="p-2 hover:bg-secondary rounded-full"><ArrowLeft className="h-5 w-5" /></button>
           <h1 className="text-3xl font-display font-bold text-foreground">{isEdit ? "Edit Invoice" : "Create New Invoice"}</h1>
         </div>
 
@@ -300,7 +319,7 @@ export default function InvoiceForm() {
                       <th className="p-3 w-20">HSN</th>
                       <th className="p-3 w-24">Unit Price</th>
                       <th className="p-3 w-16">Qty (Pairs)</th>
-                      <th className="p-3 w-20">Rate</th>
+                      <th className="p-3 w-36">Rate</th>
                       <th className="p-3 w-22">Amount</th>
                       <th className="p-3 w-8"></th>
                     </tr>
@@ -338,35 +357,45 @@ export default function InvoiceForm() {
                             </div>
                           </td>
                           <td className="p-3">
-                            <input value={item.hsnCode} onChange={e => updateRow(index, "hsnCode", e.target.value)} className="w-full p-1.5 border rounded text-sm" />
-                          </td>
-                          <td className="p-3">
-                            <input type="number" value={item.unitPrice === 0 ? "" : item.unitPrice} onChange={e => updateRow(index, "unitPrice", e.target.value)} className="w-full p-1.5 border rounded text-sm" />
-                          </td>
-                          <td className="p-3">
                             <input type="number" value={item.quantity === 0 ? "" : item.quantity} onChange={e => updateRow(index, "quantity", e.target.value)} className="w-full p-1.5 border rounded text-sm" />
                           </td>
                           <td className="p-3">
-                            {isShoe ? (
-                              <span className="w-full p-1.5 block text-sm font-mono bg-muted/40 rounded text-center">
-                                {Number(item.rate) > 0 ? Number(item.rate).toFixed(2) : ""}
-                              </span>
-                            ) : (
-                              <input
-                                type="number"
-                                step="0.01"
-                                value={item.rate || ""}
-                                placeholder="Manual"
-                                onChange={e => updateRate(index, e.target.value)}
-                                className="w-full p-1.5 border-2 border-dashed border-amber-400 rounded text-sm bg-amber-50"
-                              />
-                            )}
+                            <div className="flex items-center gap-2">
+                              <label className="flex items-center gap-2 text-xs">
+                                <input
+                                  type="checkbox"
+                                  checked={Boolean((item as UIInvoiceItem).autoRate)}
+                                  onChange={e => {
+                                    const newItems = [...items];
+                                    const updated = { ...newItems[index], autoRate: e.target.checked } as UIInvoiceItem;
+                                    newItems[index] = recalcItem(updated);
+                                    setItems(newItems);
+                                  }}
+                                />
+                                <span className="select-none">Auto</span>
+                              </label>
+
+                              {((item as UIInvoiceItem).autoRate) ? (
+                                <span className="w-36 p-2 block text-sm font-mono bg-muted/40 rounded text-center">
+                                  {Number(item.rate) > 0 ? Number(item.rate).toFixed(2) : "\u00A0"}
+                                </span>
+                              ) : (
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  value={item.rate || ""}
+                                  placeholder="Manual"
+                                  onChange={e => updateRate(index, e.target.value)}
+                                  className="w-36 p-1.5 border-2 border-dashed border-amber-400 rounded text-sm bg-amber-50"
+                                />
+                              )}
+                            </div>
                           </td>
                           <td className="p-3 text-sm font-mono bg-muted/30 text-right pr-3">
                             {Number(item.amount) > 0 ? Number(item.amount).toFixed(2) : ""}
                           </td>
                           <td className="p-3">
-                            <button onClick={() => setItems(items.filter((_, i) => i !== index))} className="p-1.5 text-rose-500 hover:bg-rose-100 rounded">
+                            <button type="button" onClick={() => setItems(items.filter((_, i) => i !== index))} className="p-1.5 text-rose-500 hover:bg-rose-100 rounded">
                               <Trash2 className="w-4 h-4" />
                             </button>
                           </td>
@@ -377,20 +406,20 @@ export default function InvoiceForm() {
                 </table>
               </div>
               <div className="mt-4 flex items-center gap-3">
-                <button onClick={() => setItems([...items, emptyItem()])} className="px-4 py-2 bg-secondary text-secondary-foreground text-sm font-medium rounded-lg hover:bg-secondary/80 flex items-center gap-2">
+                <button type="button" onClick={() => setItems([...items, emptyItem()])} className="px-4 py-2 bg-secondary text-secondary-foreground text-sm font-medium rounded-lg hover:bg-secondary/80 flex items-center gap-2">
                   <Plus className="w-4 h-4" /> Add Row (Shoes)
                 </button>
-                <button onClick={() => setItems([...items, { ...emptyItem(), category: "Socks", rate: 0 }])} className="px-4 py-2 bg-purple-100 text-purple-700 text-sm font-medium rounded-lg hover:bg-purple-200 flex items-center gap-2">
+                <button type="button" onClick={() => setItems([...items, { ...emptyItem(), category: "Socks", rate: 0, autoRate: false }])} className="px-4 py-2 bg-purple-100 text-purple-700 text-sm font-medium rounded-lg hover:bg-purple-200 flex items-center gap-2">
                   <Plus className="w-4 h-4" /> Add Socks Row
                 </button>
-                <button onClick={() => setItems([...items, { ...emptyItem(), category: "Bags", rate: 0 }])} className="px-4 py-2 bg-amber-100 text-amber-700 text-sm font-medium rounded-lg hover:bg-amber-200 flex items-center gap-2">
+                <button type="button" onClick={() => setItems([...items, { ...emptyItem(), category: "Bags", rate: 0, autoRate: false }])} className="px-4 py-2 bg-amber-100 text-amber-700 text-sm font-medium rounded-lg hover:bg-amber-200 flex items-center gap-2">
                   <Plus className="w-4 h-4" /> Add Bags Row
                 </button>
               </div>
               <p className="mt-2 text-xs text-muted-foreground">
-                <span className="font-semibold">Shoes:</span> Rate is auto-calculated (15% GST for ₹999/1099/1199, else 18%).
+                <span className="font-semibold">Shoes:</span> Rate is auto-calculated from the GST percentages below.
                 &nbsp;<span className="font-semibold">Socks/Bags:</span> Enter Rate manually.
-                &nbsp;GST is set once below and applied to all rows.
+                &nbsp;Leave GST fields blank to treat them as 0.
               </p>
             </div>
 
@@ -405,33 +434,45 @@ export default function InvoiceForm() {
                 <div className="flex justify-between"><span className="text-muted-foreground">Sub Total:</span> <span className="font-mono">{formatCurrency(subTotal)}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Total CGST:</span> <span className="font-mono">{formatCurrency(totalCgst)}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Total SGST:</span> <span className="font-mono">{formatCurrency(totalSgst)}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Total IGST:</span> <span className="font-mono">{formatCurrency(totalIgst)}</span></div>
 
                 <div className="pt-3 border-t border-primary/10">
                   <div className="flex justify-between font-bold text-base mb-2"><span>Grand Total:</span> <span className="font-mono">{formatCurrency(grandTotal)}</span></div>
                 </div>
 
                 <div className="pt-3 border-t border-primary/10">
-                  <label className="text-xs font-medium block mb-2 text-primary">Overall GST (Manual)</label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <label className="text-xs font-medium block mb-2 text-primary">GST Percentages</label>
+                  <div className="grid grid-cols-3 gap-2">
                     <label className="text-xs text-muted-foreground">
                       CGST%
                       <input
-                        type="number"
-                        step="0.01"
-                        min="0"
+                        type="text"
                         value={cgstPercent}
-                        onChange={(e) => setCgstPercent(Number(e.target.value) || 0)}
+                        placeholder="0"
+                        onFocus={(e) => e.currentTarget.select()}
+                        onChange={(e) => setCgstPercent(normalizePercentText(e.target.value))}
                         className="w-full mt-1 p-1.5 border rounded"
                       />
                     </label>
                     <label className="text-xs text-muted-foreground">
                       SGST%
                       <input
-                        type="number"
-                        step="0.01"
-                        min="0"
+                        type="text"
                         value={sgstPercent}
-                        onChange={(e) => setSgstPercent(Number(e.target.value) || 0)}
+                        placeholder="0"
+                        onFocus={(e) => e.currentTarget.select()}
+                        onChange={(e) => setSgstPercent(normalizePercentText(e.target.value))}
+                        className="w-full mt-1 p-1.5 border rounded"
+                      />
+                    </label>
+                    <label className="text-xs text-muted-foreground">
+                      IGST%
+                      <input
+                        type="text"
+                        value={igstPercent}
+                        placeholder="0"
+                        onFocus={(e) => e.currentTarget.select()}
+                        onChange={(e) => setIgstPercent(normalizePercentText(e.target.value))}
                         className="w-full mt-1 p-1.5 border rounded"
                       />
                     </label>
@@ -459,10 +500,10 @@ export default function InvoiceForm() {
               </div>
 
               <div className="mt-6 space-y-3">
-                <button onClick={handleSave} disabled={isCreating || isUpdating} className="w-full py-3 bg-primary text-primary-foreground rounded-xl font-bold shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2 disabled:opacity-50">
+                  <button type="button" onClick={handleSave} disabled={isCreating || isUpdating} className="w-full py-3 bg-primary text-primary-foreground rounded-xl font-bold shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2 disabled:opacity-50">
                   <Save className="w-5 h-5" /> {isCreating || isUpdating ? "Saving..." : "Save Invoice"}
                 </button>
-                <button onClick={() => window.print()} className="w-full py-3 bg-white border-2 border-primary text-primary rounded-xl font-bold hover:bg-primary/5 transition-all flex items-center justify-center gap-2">
+                <button type="button" onClick={() => window.print()} className="w-full py-3 bg-white border-2 border-primary text-primary rounded-xl font-bold hover:bg-primary/5 transition-all flex items-center justify-center gap-2">
                   <Printer className="w-5 h-5" /> Print / PDF
                 </button>
               </div>

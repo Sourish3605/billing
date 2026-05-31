@@ -21,6 +21,7 @@ export interface Invoice {
   subTotal: number;
   totalCgst: number;
   totalSgst: number;
+  totalIgst: number;
   grandTotal: number;
   roundingOption: InvoiceRoundingOption;
   customRounding?: number;

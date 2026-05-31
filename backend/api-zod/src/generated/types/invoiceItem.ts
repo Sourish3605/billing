@@ -19,5 +19,7 @@ export interface InvoiceItem {
   cgstAmount: number;
   sgstPercent: number;
   sgstAmount: number;
+  igstPercent: number;
+  igstAmount: number;
   category?: InvoiceItemCategory;
 }

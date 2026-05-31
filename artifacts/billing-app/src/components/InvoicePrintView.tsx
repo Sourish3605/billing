@@ -43,6 +43,10 @@ export function InvoicePrintView({ invoice, settings }: InvoicePrintViewProps) {
     Number(invoice.subTotal) > 0
       ? (Number(invoice.totalSgst) / Number(invoice.subTotal)) * 100
       : 0;
+  const effectiveIgstPercent =
+    Number(invoice.subTotal) > 0
+      ? (Number(invoice.totalIgst) / Number(invoice.subTotal)) * 100
+      : 0;
   const itemRowCount = renderList.filter((row) => row.type === "item").length;
   const fillerRows = Math.max(0, 8 - itemRowCount);
 
@@ -171,6 +175,10 @@ export function InvoicePrintView({ invoice, settings }: InvoicePrintViewProps) {
           <div className="flex justify-between p-1.5 border-b print-border-b">
             <span className="font-medium">Add: SGST ({effectiveSgstPercent.toFixed(2)}%):</span>
             <span>{formatCurrency(invoice.totalSgst)}</span>
+          </div>
+          <div className="flex justify-between p-1.5 border-b print-border-b">
+            <span className="font-medium">Add: IGST ({effectiveIgstPercent.toFixed(2)}%):</span>
+            <span>{formatCurrency(invoice.totalIgst)}</span>
           </div>
           <div className="flex justify-between p-1.5 border-b print-border-b bg-gray-100 font-black text-[18px]">
             <span>Grand Total:</span>

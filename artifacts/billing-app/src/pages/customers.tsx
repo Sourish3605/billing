@@ -101,8 +101,8 @@ export default function Customers() {
                 <input required type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full px-4 py-2.5 rounded-lg border-2 border-border focus:border-primary outline-none transition-all" />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Phone Number</label>
-                <input required type="tel" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-full px-4 py-2.5 rounded-lg border-2 border-border focus:border-primary outline-none transition-all" />
+                <label className="block text-sm font-medium mb-1">Phone Number (Optional)</label>
+                <input type="tel" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-full px-4 py-2.5 rounded-lg border-2 border-border focus:border-primary outline-none transition-all" />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">GSTIN (Optional)</label>

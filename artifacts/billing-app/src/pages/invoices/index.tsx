@@ -60,6 +60,7 @@ export default function InvoicesList() {
                         <Eye className="w-4 h-4" /> View / Edit
                       </Link>
                       <button
+                        type="button"
                         onClick={() => handleDelete(inv.id, inv.invoiceNumber)}
                         disabled={isDeleting}
                         className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg flex items-center gap-1 text-sm font-medium disabled:opacity-50"
