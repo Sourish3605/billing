@@ -318,8 +318,8 @@ export default function InvoiceForm() {
                   <thead>
                     <tr className="bg-muted text-xs uppercase tracking-wider text-muted-foreground">
                       <th className="p-3 w-8">S.No</th>
-                      <th className="p-3 w-[75%]">Description of Goods</th>
-                      <th className="p-3 w-20">HSN/SAC</th>
+                      <th className="p-3 w-[80%]">Description of Goods</th>
+                      <th className="p-3 w-16">HSN/SAC</th>
                       <th className="p-3 w-28">Unit Price</th>
                       <th className="p-3 w-28">PCT %</th>
                       <th className="p-3 w-24">Quantity</th>
@@ -335,7 +335,7 @@ export default function InvoiceForm() {
                       return (
                         <tr key={index} className="group hover:bg-muted/10">
                           <td className="p-3 text-sm text-muted-foreground">{index + 1}</td>
-                          <td className="p-3 w-[75%]">
+                          <td className="p-3 w-[80%]">
                             <div className="flex flex-col gap-2">
                               <select
                                 className="p-1.5 border rounded text-sm w-full"
@@ -365,7 +365,7 @@ export default function InvoiceForm() {
                               placeholder="HSN/SAC"
                               value={item.hsnCode || ""}
                               onChange={e => updateRow(index, "hsnCode", e.target.value)}
-                              className="w-36 p-2.5 border rounded text-sm"
+                              className="w-16 p-2.5 border rounded text-sm"
                             />
                           </td>
                           <td className="p-3">
