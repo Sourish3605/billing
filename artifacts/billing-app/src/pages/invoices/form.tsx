@@ -237,7 +237,7 @@ export default function InvoiceForm() {
 
   const handleSave = async () => {
     if (!invoiceNumber.trim() || !customerName || items.length === 0) return alert("Please fill required fields");
-    const sanitizedItems: InvoiceItem[] = items.map(({ autoRate, manualPercent, ...rest }) => rest as InvoiceItem);
+    const sanitizedItems = items.map(({ autoRate, ...rest }) => rest);
 
     const payload: InvoiceInput & { invoiceNumber: string } = {
       invoiceNumber: invoiceNumber.trim(),
