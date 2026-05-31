@@ -319,12 +319,12 @@ export default function InvoiceForm() {
                     <tr className="bg-muted text-xs uppercase tracking-wider text-muted-foreground">
                       <th className="p-3 w-8">S.No</th>
                       <th className="p-3">Description of Goods</th>
-                      <th className="p-3 w-20">HSN/SAC</th>
-                      <th className="p-3 w-24">Unit Price</th>
-                      <th className="p-3 w-20">PCT %</th>
-                      <th className="p-3 w-16">Quantity</th>
-                      <th className="p-3 w-36">Rate</th>
-                      <th className="p-3 w-22">Amount</th>
+                      <th className="p-3 w-24">HSN/SAC</th>
+                      <th className="p-3 w-28">Unit Price</th>
+                      <th className="p-3 w-28">PCT %</th>
+                      <th className="p-3 w-24">Quantity</th>
+                      <th className="p-3 w-44">Rate</th>
+                      <th className="p-3 w-28">Amount</th>
                       <th className="p-3 w-8"></th>
                     </tr>
                   </thead>
@@ -365,7 +365,7 @@ export default function InvoiceForm() {
                               placeholder="HSN/SAC"
                               value={item.hsnCode || ""}
                               onChange={e => updateRow(index, "hsnCode", e.target.value)}
-                              className="w-full p-1.5 border rounded text-sm"
+                              className="w-full p-2.5 border rounded text-sm"
                             />
                           </td>
                           <td className="p-3">
@@ -374,7 +374,7 @@ export default function InvoiceForm() {
                               step="0.01"
                               value={item.unitPrice === 0 ? "" : item.unitPrice}
                               onChange={e => updateRow(index, "unitPrice", e.target.value)}
-                              className="w-full p-1.5 border rounded text-sm"
+                              className="w-28 p-2.5 border rounded text-sm"
                             />
                           </td>
                           <td className="p-3">
@@ -384,11 +384,11 @@ export default function InvoiceForm() {
                               value={item.manualPercent || ""}
                               placeholder="0"
                               onChange={e => updateRow(index, "manualPercent", Number(e.target.value) || 0)}
-                              className="w-full p-1.5 border rounded text-sm"
+                              className="w-28 p-2.5 border rounded text-sm"
                             />
                           </td>
                           <td className="p-3">
-                            <input type="number" value={item.quantity === 0 ? "" : item.quantity} onChange={e => updateRow(index, "quantity", e.target.value)} className="w-full p-1.5 border rounded text-sm" />
+                            <input type="number" value={item.quantity === 0 ? "" : item.quantity} onChange={e => updateRow(index, "quantity", e.target.value)} className="w-24 p-2.5 border rounded text-sm" />
                           </td>
                           <td className="p-3">
                             <div className="flex items-center gap-2">
@@ -409,7 +409,7 @@ export default function InvoiceForm() {
                                   </label>
 
                                   {((item as UIInvoiceItem).autoRate) ? (
-                                    <span className="w-36 p-2 block text-sm font-mono bg-muted/40 rounded text-center">
+                                    <span className="w-44 p-2 block text-sm font-mono bg-muted/40 rounded text-center">
                                       {Number(item.rate) > 0 ? Number(item.rate).toFixed(2) : "\u00A0"}
                                     </span>
                                   ) : (
@@ -419,7 +419,7 @@ export default function InvoiceForm() {
                                       value={item.rate || ""}
                                       placeholder="Manual"
                                       onChange={e => updateRate(index, e.target.value)}
-                                      className="w-36 p-1.5 border-2 border-dashed border-amber-400 rounded text-sm bg-amber-50"
+                                      className="w-44 p-2.5 border-2 border-dashed border-amber-400 rounded text-sm bg-amber-50"
                                     />
                                   )}
                                 </>
