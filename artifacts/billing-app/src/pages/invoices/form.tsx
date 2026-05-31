@@ -322,7 +322,7 @@ export default function InvoiceForm() {
                       <th className="p-3 w-24">HSN/SAC</th>
                       <th className="p-3 w-28">Unit Price</th>
                       <th className="p-3 w-16">PCT %</th>
-                      <th className="p-3 w-12">Quantity</th>
+                      <th className="p-3 w-20">Quantity</th>
                       <th className="p-3 w-44">Rate</th>
                       <th className="p-3 w-28">Amount</th>
                       <th className="p-3 w-8"></th>
@@ -388,7 +388,7 @@ export default function InvoiceForm() {
                             />
                           </td>
                           <td className="p-3">
-                            <input type="number" value={item.quantity === 0 ? "" : item.quantity} onChange={e => updateRow(index, "quantity", e.target.value)} className="w-12 p-2.5 border rounded text-sm" />
+                            <input type="number" value={item.quantity === 0 ? "" : item.quantity} onChange={e => updateRow(index, "quantity", e.target.value)} className="w-20 p-2.5 border rounded text-sm" />
                           </td>
                           <td className="p-3">
                             <div className="flex items-center gap-2">
