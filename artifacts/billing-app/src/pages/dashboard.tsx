@@ -18,10 +18,11 @@ export default function Dashboard() {
   }
 
   const statCards = [
-    { title: "Today's Sales", value: formatCurrency(data.todaySales || 0), icon: IndianRupee, color: "text-emerald-500", bg: "bg-emerald-500/10" },
+    { title: "Total Sales", value: formatCurrency(data.totalSales || 0), icon: IndianRupee, color: "text-emerald-500", bg: "bg-emerald-500/10" },
+    { title: "Monthly Sales", value: formatCurrency(data.monthlySales || 0), icon: IndianRupee, color: "text-teal-500", bg: "bg-teal-500/10" },
+    { title: "Yearly Sales", value: formatCurrency(data.yearlySales || 0), icon: IndianRupee, color: "text-cyan-500", bg: "bg-cyan-500/10" },
     { title: "Total Invoices", value: data.totalInvoices || 0, icon: FileText, color: "text-blue-500", bg: "bg-blue-500/10" },
     { title: "Total Products", value: data.totalProducts || 0, icon: Package, color: "text-indigo-500", bg: "bg-indigo-500/10" },
-    { title: "Low Stock Items", value: data.lowStockProducts?.length || 0, icon: AlertTriangle, color: "text-rose-500", bg: "bg-rose-500/10" },
   ];
 
   return (

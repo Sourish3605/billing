@@ -435,6 +435,9 @@ export const UpdateSettingsResponse = zod.object({
  * @summary Get dashboard stats
  */
 export const GetDashboardResponse = zod.object({
+  totalSales: zod.number(),
+  monthlySales: zod.number(),
+  yearlySales: zod.number(),
   todaySales: zod.number(),
   totalInvoices: zod.number(),
   totalProducts: zod.number(),

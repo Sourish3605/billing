@@ -8,6 +8,9 @@
 import type { Product } from "./product";
 
 export interface DashboardStats {
+  totalSales: number;
+  monthlySales: number;
+  yearlySales: number;
   todaySales: number;
   totalInvoices: number;
   totalProducts: number;
